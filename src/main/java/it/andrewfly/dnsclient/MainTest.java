@@ -11,7 +11,7 @@ public class MainTest {
 
     static void main(String[] args) throws Exception {
         // 1. Costruisci la query
-        DNSMessage query = DNSMessage.buildQuery("google.com", Type.NS);
+        DNSMessage query = DNSMessage.buildQuery("andrewfly.it", Type.TXT);
         byte[] queryBytes = query.toByteArray();
 
         // 2. Apri socket UDP
@@ -27,6 +27,13 @@ public class MainTest {
         byte[] buffer = new byte[512];
         DatagramPacket recvPacket = new DatagramPacket(buffer, buffer.length);
         socket.receive(recvPacket);
+
+        // Stampa il buffer in hex
+        StringBuilder hexString = new StringBuilder();
+        for (int i = 0; i < recvPacket.getLength(); i++) {
+            hexString.append(String.format("%02X ", buffer[i]));
+        }
+        System.out.println(hexString.toString().trim());
 
         DNSMessage response = DNSMessage.fromByteArray(recvPacket.getData());
 

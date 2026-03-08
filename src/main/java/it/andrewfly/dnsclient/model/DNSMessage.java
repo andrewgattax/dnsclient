@@ -1,13 +1,13 @@
 package it.andrewfly.dnsclient.model;
 
 import it.andrewfly.dnsclient.DNSSerializable;
+import it.andrewfly.dnsclient.service.UtilService;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.io.ByteArrayOutputStream;
 import java.util.List;
-import java.util.UUID;
 
 @Getter
 @Setter
@@ -105,7 +105,7 @@ public class DNSMessage implements DNSSerializable {
         int originalOffset = offset;
 
         // Skip QNAME
-        offset = skipName(bytes, offset);
+        offset = UtilService.skipName(bytes, offset);
 
         // QTYPE (2 bytes) + QCLASS (2 bytes)
         offset += 4;
@@ -117,42 +117,18 @@ public class DNSMessage implements DNSSerializable {
         int originalOffset = offset;
 
         // Skip RNAME
-        offset = skipName(bytes, offset);
+        offset = UtilService.skipName(bytes, offset);
 
         // RTYPE (2) + RCLASS (2) + TTL (4) + RDLENGTH (2)
         offset += 10;
 
         // Leggi RDLENGTH
-        int rdLength = ((bytes[offset - 2] & 0xFF) << 8) | (bytes[offset - 1] & 0xFF);
+        int rdLength = UtilService.readUint16(bytes, offset - 2);
 
         // Aggiungi RDLENGTH
         offset += rdLength;
 
         return offset - originalOffset;
-    }
-
-    private static int skipName(byte[] bytes, int offset) {
-        int currentOffset = offset;
-
-        while (true) {
-            int length = bytes[currentOffset] & 0xFF;
-
-            // Check for compression pointer
-            if ((length & 0xC0) == 0xC0) {
-                // È un puntatore, consuma 2 byte e termina
-                return currentOffset + 2;
-            }
-
-            currentOffset++;
-
-            if (length == 0) {
-                break; // Fine del nome
-            }
-
-            currentOffset += length;
-        }
-
-        return currentOffset;
     }
 
     public static DNSMessage buildQuery(String query, Type queryType) {

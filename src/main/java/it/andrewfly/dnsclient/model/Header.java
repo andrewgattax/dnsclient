@@ -1,6 +1,7 @@
 package it.andrewfly.dnsclient.model;
 
 import it.andrewfly.dnsclient.DNSSerializable;
+import it.andrewfly.dnsclient.service.UtilService;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -22,8 +23,8 @@ public class Header implements DNSSerializable {
         int offset = 0;
 
         // ID: 2 bytes
-        bytes[offset++] = (byte) ((id >> 8) & 0xFF);
-        bytes[offset++] = (byte) (id & 0xFF);
+        UtilService.writeUint16(bytes, offset, id);
+        offset += 2;
 
         // Flags: 2 bytes
         byte[] flagsBytes = flags.toByteArray();
@@ -31,20 +32,20 @@ public class Header implements DNSSerializable {
         bytes[offset++] = flagsBytes[1];
 
         // QD Count: 2 bytes
-        bytes[offset++] = (byte) ((qdCount >> 8) & 0xFF);
-        bytes[offset++] = (byte) (qdCount & 0xFF);
+        UtilService.writeUint16(bytes, offset, qdCount);
+        offset += 2;
 
         // AN Count: 2 bytes
-        bytes[offset++] = (byte) ((anCount >> 8) & 0xFF);
-        bytes[offset++] = (byte) (anCount & 0xFF);
+        UtilService.writeUint16(bytes, offset, anCount);
+        offset += 2;
 
         // NS Count: 2 bytes
-        bytes[offset++] = (byte) ((nsCount >> 8) & 0xFF);
-        bytes[offset++] = (byte) (nsCount & 0xFF);
+        UtilService.writeUint16(bytes, offset, nsCount);
+        offset += 2;
 
         // AR Count: 2 bytes
-        bytes[offset++] = (byte) ((arCount >> 8) & 0xFF);
-        bytes[offset++] = (byte) (arCount & 0xFF);
+        UtilService.writeUint16(bytes, offset, arCount);
+        offset += 2;
 
         return bytes;
     }
@@ -57,7 +58,7 @@ public class Header implements DNSSerializable {
         int offset = 0;
 
         // ID: 2 bytes (big-endian)
-        int id = ((bytes[offset] & 0xFF) << 8) | (bytes[offset + 1] & 0xFF);
+        int id = UtilService.readUint16(bytes, offset);
         offset += 2;
 
         // Flags: 2 bytes
@@ -65,19 +66,19 @@ public class Header implements DNSSerializable {
         offset += 2;
 
         // QD Count: 2 bytes (big-endian)
-        int qdCount = ((bytes[offset] & 0xFF) << 8) | (bytes[offset + 1] & 0xFF);
+        int qdCount = UtilService.readUint16(bytes, offset);
         offset += 2;
 
         // AN Count: 2 bytes (big-endian)
-        int anCount = ((bytes[offset] & 0xFF) << 8) | (bytes[offset + 1] & 0xFF);
+        int anCount = UtilService.readUint16(bytes, offset);
         offset += 2;
 
         // NS Count: 2 bytes (big-endian)
-        int nsCount = ((bytes[offset] & 0xFF) << 8) | (bytes[offset + 1] & 0xFF);
+        int nsCount = UtilService.readUint16(bytes, offset);
         offset += 2;
 
         // AR Count: 2 bytes (big-endian)
-        int arCount = ((bytes[offset] & 0xFF) << 8) | (bytes[offset + 1] & 0xFF);
+        int arCount = UtilService.readUint16(bytes, offset);
 
         return Header.builder()
                 .id(id)
