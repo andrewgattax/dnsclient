@@ -148,4 +148,87 @@ public class UtilService {
         }
         return hex.toString();
     }
+
+    // Encode RDATA based on record type
+    public static byte[] encodeRData(String rData, Type rType) {
+        if (rData == null || rData.isEmpty()) {
+            return new byte[0];
+        }
+
+        switch (rType) {
+            case A:
+                // IPv4 address: "192.168.1.1" → 4 bytes
+                String[] parts = rData.split("\\.");
+                if (parts.length == 4) {
+                    byte[] ip = new byte[4];
+                    for (int i = 0; i < 4; i++) {
+                        ip[i] = (byte) Integer.parseInt(parts[i]);
+                    }
+                    return ip;
+                }
+                return new byte[0];
+
+            case AAAA:
+                // IPv6 address: "2001:db8::1" → 16 bytes
+                String[] ipv6Parts = rData.split(":");
+                java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+                for (String part : ipv6Parts) {
+                    if (part.isEmpty()) {
+                        // Handle :: compression - pad with zeros
+                        int zeros = 8 - ipv6Parts.length + 1;
+                        for (int i = 0; i < zeros; i++) {
+                            writeUint16ToStream(baos, 0);
+                        }
+                    } else {
+                        int value = Integer.parseInt(part, 16);
+                        writeUint16ToStream(baos, value);
+                    }
+                }
+                // If we still don't have 16 bytes, pad at the end
+                while (baos.size() < 16) {
+                    writeUint16ToStream(baos, 0);
+                }
+                return baos.toByteArray();
+
+            case MX:
+                // MX: "10 smtp.google.com" → 2 bytes preference + encoded domain name
+                String[] mxParts = rData.split(" ", 2);
+                if (mxParts.length == 2) {
+                    int preference = Integer.parseInt(mxParts[0]);
+                    byte[] exchangeName = encodeName(mxParts[1]);
+                    byte[] mxData = new byte[2 + exchangeName.length];
+                    writeUint16(mxData, 0, preference);
+                    System.arraycopy(exchangeName, 0, mxData, 2, exchangeName.length);
+                    return mxData;
+                }
+                return new byte[0];
+
+            case NS:
+            case CNAME:
+                // NS and CNAME: domain name → encoded domain name
+                return encodeName(rData);
+
+            case TXT:
+                // TXT: text string → length-prefixed string(s)
+                java.io.ByteArrayOutputStream txtBaos = new java.io.ByteArrayOutputStream();
+                // Split by spaces and encode each part as a character-string
+                String[] txtParts = rData.split(" ");
+                for (String part : txtParts) {
+                    byte[] partBytes = part.getBytes();
+                    txtBaos.write((byte) partBytes.length);
+                    txtBaos.write(partBytes, 0, partBytes.length);
+                }
+                return txtBaos.toByteArray();
+
+            default:
+                // For unknown types, return raw bytes
+                return rData.getBytes();
+        }
+    }
+
+    // Helper method to write uint16 to ByteArrayOutputStream
+    private static void writeUint16ToStream(java.io.ByteArrayOutputStream baos, int value) {
+        baos.write((value >> 8) & 0xFF);
+        baos.write(value & 0xFF);
+    }
 }

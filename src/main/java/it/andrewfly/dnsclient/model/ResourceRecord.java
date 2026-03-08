@@ -47,23 +47,10 @@ public class ResourceRecord implements DNSSerializable {
         offset += 2;
 
         // RDATA
-        byte[] dataBytes = encodeRData();
+        byte[] dataBytes = UtilService.encodeRData(rData, rType);
         System.arraycopy(dataBytes, 0, bytes, offset, dataBytes.length);
 
         return bytes;
-    }
-
-    private byte[] encodeRData() {
-        if (rType == Type.A && rData != null && !rData.isEmpty()) {
-            String[] parts = rData.split("\\.");
-            byte[] ip = new byte[4];
-            for (int i = 0; i < 4; i++) {
-                ip[i] = (byte) Integer.parseInt(parts[i]);
-            }
-            return ip;
-        }
-        // Per altri tipi, ritorna i byte raw della stringa
-        return rData != null ? rData.getBytes() : new byte[0];
     }
 
     public static ResourceRecord fromByteArray(byte[] bytes, int offset) {
